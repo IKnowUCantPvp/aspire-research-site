@@ -398,6 +398,40 @@ h3 {
 .logo-row .logo-tall { height: 34px; }
 .logo-row .logo-square { height: 30px; width: 30px; }
 
+.logo-marquee {
+  overflow: hidden;
+  position: relative;
+}
+
+.logo-row--marquee {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 48px;
+  flex-wrap: nowrap;
+  animation: logo-marquee-ltr 28s linear infinite;
+  min-width: max-content;
+}
+
+.logo-marquee--rtl .logo-row--marquee {
+  animation-name: logo-marquee-rtl;
+}
+
+.logo-row--marquee img,
+.logo-row--marquee svg {
+  opacity: 0.95;
+}
+
+@keyframes logo-marquee-ltr {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes logo-marquee-rtl {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 /* ===================== Mission intro ===================== */
 .mission-intro {
   max-width: 720px;
