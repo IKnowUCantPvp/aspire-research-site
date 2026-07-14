@@ -1,0 +1,13 @@
+{
+  "name": "aspire-research-site",
+  "version": "1.0.0",
+  "description": "Aspire Research / Aspire Fellowship marketing site",
+  "scripts": {
+    "start": "eleventy --serve",
+    "build": "eleventy"
+  },
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@11ty/eleventy": "^2.0.1"
+  }
+}
