@@ -27,6 +27,8 @@
   <div class="row"><label>bands</label><input id="bands" type="range" min="1" max="6" step="1"></div>
   <div class="row"><label>contrast</label><input id="contrast" type="range" min="0.2" max="3.0" step="0.01"></div>
   <div class="row"><label>dither</label><input id="dither" type="range" min="0.0" max="0.12" step="0.001"></div>
+  <div class="row"><label>sheen</label><input id="sheenIntensity" type="range" min="0.0" max="2.0" step="0.01"></div>
+  <div class="row"><label>gloss</label><input id="sheenPower" type="range" min="1" max="64" step="1"></div>
 </div>
 <div class="credits">Standalone WebGL2 — domain-warped FBM, Ashima simplex. No build step.</div>
 
@@ -69,9 +71,15 @@
   // --- Presets ---
   const presetA = { speed:1.45, scale:0.68, seed:437.0, turbAmp:0.9, turbFreq:0.46, octaves:7, bands:2.0, contrast:1.2, dither:0.05 };
   const presetB = { speed:0.81, scale:0.64, seed:40.0, turbAmp:0.34, turbFreq:0.71, octaves:7, bands:2.0, contrast:1.2, dither:0.05 };
+  // sheen defaults
+  presetA.sheenIntensity = 0.95; presetA.sheenPower = 20; presetA.sheenColor = [0.02,0.03,0.06];
+  presetB.sheenIntensity = 0.5; presetB.sheenPower = 16; presetB.sheenColor = [0.02,0.03,0.06];
 
   // --- Uniform state (editable) ---
   const state = Object.assign({}, presetA);
+  state.sheenIntensity = state.sheenIntensity || 0.95;
+  state.sheenPower = state.sheenPower || 20;
+  state.sheenColor = state.sheenColor || [0.02,0.03,0.06];
 
   // --- Shader sources (WebGL2 / GLSL ES 3.00) ---
   const vs = `#version 300 es
@@ -88,6 +96,9 @@
   uniform float u_turbAmp; uniform float u_turbFreq; uniform int u_octaves;
   uniform sampler2D u_blueNoise;
   uniform float u_noiseScale;
+  uniform float u_sheenIntensity;
+  uniform float u_sheenPower;
+  uniform vec3 u_sheenColor;
   uniform float u_bands; uniform float u_contrast; uniform float u_dither;
 
   // Ashima 2D simplex noise (common GLSL implementation)
@@ -196,8 +207,20 @@
     else linearColor = mix(c1, c2, (mm-0.5)*2.0);
 
     // subtle sheen in linear space
-    float sheen = smoothstep(0.5, 0.9, fbm(p * 4.0 + vec2(u_time*0.4), min(4,u_octaves)));
-    linearColor += vec3(0.02,0.03,0.06) * sheen * 0.8;
+      float sheen = smoothstep(0.5, 0.9, fbm(p * 4.0 + vec2(u_time*0.4), min(4,u_octaves)));
+      linearColor += vec3(0.02,0.03,0.06) * sheen * 0.8;
+
+      // compute approximate gradient of the noise to derive a normal for a specular-like sheen
+      float eps = 1.0 / 512.0; // small offset in uv space
+      float n_x1 = fbm(warp + vec2(t*0.2) + vec2(eps,0.0), u_octaves);
+      float n_x2 = fbm(warp + vec2(t*0.2) + vec2(-eps,0.0), u_octaves);
+      float n_y1 = fbm(warp + vec2(t*0.2) + vec2(0.0,eps), u_octaves);
+      float n_y2 = fbm(warp + vec2(t*0.2) + vec2(0.0,-eps), u_octaves);
+      vec3 grad = vec3((n_x1 - n_x2), (n_y1 - n_y2), 1.0);
+      vec3 nrm = normalize(grad);
+      vec3 lightDir = normalize(vec3(0.3, 0.5, 0.8));
+      float spec = pow(max(dot(nrm, lightDir), 0.0), u_sheenPower) * u_sheenIntensity;
+      linearColor += u_sheenColor * spec;
 
     // convert back to sRGB for display
     vec3 srgb = linearTosRGB(linearColor);
@@ -311,10 +334,11 @@
   const qs = (id)=>document.getElementById(id);
   qs('presetA').onclick = ()=>{ Object.assign(state, presetA); syncUI(); };
   qs('presetB').onclick = ()=>{ Object.assign(state, presetB); syncUI(); };
-  const inputs = ['speed','scale','turbAmp','turbFreq','octaves','bands','contrast','dither'];
+  const inputs = ['speed','scale','turbAmp','turbFreq','octaves','bands','contrast','dither','sheenIntensity','sheenPower'];
   function syncUI(){
     qs('speed').value = state.speed; qs('scale').value = state.scale; qs('turbAmp').value = state.turbAmp; qs('turbFreq').value = state.turbFreq;
     qs('octaves').value = state.octaves; qs('bands').value = state.bands; qs('contrast').value = state.contrast; qs('dither').value = state.dither;
+    qs('sheenIntensity').value = state.sheenIntensity; qs('sheenPower').value = state.sheenPower;
   }
   inputs.forEach(id=>{
     qs(id).addEventListener('input', (e)=>{
@@ -344,6 +368,12 @@
     gl.uniform1f(uniforms.u_bands, state.bands);
     gl.uniform1f(uniforms.u_contrast, state.contrast);
     gl.uniform1f(uniforms.u_dither, state.dither);
+    // sheen uniforms
+    gl.uniform1f(uniforms.u_sheenIntensity, state.sheenIntensity);
+    gl.uniform1f(uniforms.u_sheenPower, state.sheenPower);
+    gl.uniform3f(uniforms.u_sheenColor, state.sheenColor[0], state.sheenColor[1], state.sheenColor[2]);
+    // noise scale for blue-noise tiling
+    gl.uniform1f(uniforms.u_noiseScale, 64.0);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     requestAnimationFrame(draw);
