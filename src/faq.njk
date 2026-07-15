@@ -43,7 +43,11 @@ permalink: /faq/
 <section class="section">
   <div class="container">
     <div class="cta-banner">
-      <img src="/assets/images/photos/cta-library.jpg" alt="" class="cta-banner__bg">
+      <picture>
+        <source srcset="/assets/images/photos/cta-library-600.jpg" media="(max-width:800px)">
+        <source srcset="/assets/images/photos/cta-library.jpg" media="(min-width:801px)">
+        <img src="/assets/images/photos/cta-library-600.jpg" alt="" class="cta-banner__bg" width="933" height="1400" loading="lazy">
+      </picture>
       <div class="cta-banner__overlay"></div>
       <div class="cta-banner__content">
         <h2>Ready to Match with your mentor?</h2>
