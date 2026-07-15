@@ -27,8 +27,12 @@
   <div class="row"><label>bands</label><input id="bands" type="range" min="1" max="6" step="1"></div>
   <div class="row"><label>contrast</label><input id="contrast" type="range" min="0.2" max="3.0" step="0.01"></div>
   <div class="row"><label>dither</label><input id="dither" type="range" min="0.0" max="0.12" step="0.001"></div>
+  <div class="row"><label>noiseScale</label><input id="noiseScale" type="range" min="8" max="256" step="1"></div>
   <div class="row"><label>sheen</label><input id="sheenIntensity" type="range" min="0.0" max="2.0" step="0.01"></div>
   <div class="row"><label>gloss</label><input id="sheenPower" type="range" min="1" max="64" step="1"></div>
+  <div class="row"><label>blue-noise</label><input id="blueNoiseFile" type="file" accept="image/*"></div>
+  <div class="row"><label>blur</label><input id="blurToggle" type="checkbox"><label style="margin-left:8px">enable separable blur</label></div>
+  <div class="row"><label>blurRadius</label><input id="blurRadius" type="range" min="0" max="8" step="0.5"></div>
 </div>
 <div class="credits">Standalone WebGL2 — domain-warped FBM, Ashima simplex. No build step.</div>
 
@@ -330,6 +334,40 @@
   // default tile scale (how many tiles across the screen)
   gl.uniform1f(uniforms.u_noiseScale, 64.0);
 
+  // --- prepare FBOs for optional separable blur ---
+  function createFBO(w,h){
+    const tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    const fbo = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    return {fbo, tex, w, h};
+  }
+  let fbo1 = null, fbo2 = null;
+
+  // blur shaders (separable horizontal + vertical)
+  const blurVS = `#version 300 es
+  in vec2 a_pos; out vec2 v_uv; void main(){ v_uv = a_pos * 0.5 + 0.5; gl_Position = vec4(a_pos,0,1); }`;
+  const blurFS = `#version 300 es
+  precision highp float; in vec2 v_uv; out vec4 outColor; uniform sampler2D u_tex; uniform vec2 u_texel; uniform int u_horizontal; uniform float u_radius;
+  void main(){ vec2 uv = v_uv; vec3 c = vec3(0.0);
+    float w[5]; w[0]=0.227027; w[1]=0.1945946; w[2]=0.1216216; w[3]=0.054054; w[4]=0.016216;
+    if(u_horizontal==1){
+      for(int i=0;i<5;i++){ c += texture(u_tex, uv + vec2(float(i)*u_texel.x,0.0)).rgb * w[i]; if(i>0) c += texture(u_tex, uv - vec2(float(i)*u_texel.x,0.0)).rgb * w[i]; }
+    } else {
+      for(int i=0;i<5;i++){ c += texture(u_tex, uv + vec2(0.0,float(i)*u_texel.y)).rgb * w[i]; if(i>0) c += texture(u_tex, uv - vec2(0.0,float(i)*u_texel.y)).rgb * w[i]; }
+    }
+    outColor = vec4(c,1.0);
+  }`;
+  // compile blur program
+  const bV = compileShader(blurVS, gl.VERTEX_SHADER); const bF = compileShader(blurFS, gl.FRAGMENT_SHADER);
+  const blurProg = gl.createProgram(); gl.attachShader(blurProg, bV); gl.attachShader(blurProg, bF); gl.bindAttribLocation(blurProg, 0, 'a_pos'); gl.linkProgram(blurProg);
+  const blurUniforms = { u_tex: gl.getUniformLocation(blurProg,'u_tex'), u_texel: gl.getUniformLocation(blurProg,'u_texel'), u_horizontal: gl.getUniformLocation(blurProg,'u_horizontal'), u_radius: gl.getUniformLocation(blurProg,'u_radius') };
+
   // UI wiring
   const qs = (id)=>document.getElementById(id);
   qs('presetA').onclick = ()=>{ Object.assign(state, presetA); syncUI(); };
@@ -339,6 +377,7 @@
     qs('speed').value = state.speed; qs('scale').value = state.scale; qs('turbAmp').value = state.turbAmp; qs('turbFreq').value = state.turbFreq;
     qs('octaves').value = state.octaves; qs('bands').value = state.bands; qs('contrast').value = state.contrast; qs('dither').value = state.dither;
     qs('sheenIntensity').value = state.sheenIntensity; qs('sheenPower').value = state.sheenPower;
+    qs('noiseScale').value = 64; qs('blurRadius').value = 2.0; qs('blurToggle').checked = false;
   }
   inputs.forEach(id=>{
     qs(id).addEventListener('input', (e)=>{
@@ -346,19 +385,33 @@
       state[id] = val; if(id==='octaves') state.octaves = Math.max(1, Math.floor(val));
     });
   });
+  // noiseScale input
+  qs('noiseScale').addEventListener('input', (e)=>{ gl.uniform1f(uniforms.u_noiseScale, parseFloat(e.target.value)); });
+  // blue-noise file upload
+  qs('blueNoiseFile').addEventListener('change', (e)=>{
+    const f = e.target.files[0]; if(!f) return;
+    const img = new Image(); img.onload = ()=>{
+      gl.bindTexture(gl.TEXTURE_2D, noiseTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    };
+    img.src = URL.createObjectURL(f);
+  });
+  // blur controls
+  qs('blurRadius').addEventListener('input', (e)=>{ /* value read each frame */ });
+  qs('blurToggle').addEventListener('change', (e)=>{ /* toggles taken into account in draw() */ });
   syncUI();
 
   // render loop
   let start = performance.now();
   function draw(){
     resize();
-    gl.useProgram(prog);
     const w = canvas.width, h = canvas.height;
     gl.uniform2f(uniforms.u_resolution, w, h);
     const t = (performance.now() - start) * 0.001;
     gl.uniform1f(uniforms.u_time, t);
 
     // set parameter uniforms
+    gl.useProgram(prog);
     gl.uniform1f(uniforms.u_speed, state.speed);
     gl.uniform1f(uniforms.u_scale, state.scale);
     gl.uniform1f(uniforms.u_seed, state.seed || 0.0);
@@ -373,9 +426,46 @@
     gl.uniform1f(uniforms.u_sheenPower, state.sheenPower);
     gl.uniform3f(uniforms.u_sheenColor, state.sheenColor[0], state.sheenColor[1], state.sheenColor[2]);
     // noise scale for blue-noise tiling
-    gl.uniform1f(uniforms.u_noiseScale, 64.0);
+    const noiseScale = parseFloat(qs('noiseScale').value || 64.0);
+    gl.uniform1f(uniforms.u_noiseScale, noiseScale);
 
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    const doBlur = qs('blurToggle').checked;
+    const blurRadius = parseFloat(qs('blurRadius').value || 2.0);
+
+    if(doBlur){
+      // ensure FBO sizes
+      if(!fbo1 || fbo1.w !== w || fbo1.h !== h){ fbo1 = createFBO(w,h); fbo2 = createFBO(w,h); }
+      // render main scene into fbo1
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo1.fbo);
+      gl.viewport(0,0,w,h);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+      // horizontal blur: sample fbo1 -> fbo2
+      gl.useProgram(blurProg);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo2.fbo);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, fbo1.tex);
+      gl.uniform1i(blurUniforms.u_tex, 0);
+      gl.uniform2f(blurUniforms.u_texel, 1.0/w * blurRadius, 1.0/h);
+      gl.uniform1i(blurUniforms.u_horizontal, 1);
+      gl.uniform1f(blurUniforms.u_radius, blurRadius);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+      // vertical blur: sample fbo2 -> screen
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, fbo2.tex);
+      gl.uniform1i(blurUniforms.u_tex, 0);
+      gl.uniform2f(blurUniforms.u_texel, 1.0/w, 1.0/h * blurRadius);
+      gl.uniform1i(blurUniforms.u_horizontal, 0);
+      gl.uniform1f(blurUniforms.u_radius, blurRadius);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      // restore main program for next frame
+      gl.useProgram(prog);
+    } else {
+      // direct render to screen
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0,0,w,h);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    }
     requestAnimationFrame(draw);
   }
   requestAnimationFrame(draw);
