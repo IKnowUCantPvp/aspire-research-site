@@ -1173,13 +1173,13 @@ h3 {
 
 .page-home .hero-cluster {
   position: absolute;
-  top: 28px;
-  width: 220px;
+  top: 24px;
+  width: 246px;
   border-radius: 18px;
-  border: 2px solid rgba(30, 71, 112, 0.2);
-  background: rgba(244, 248, 255, 0.92);
-  box-shadow: 0 10px 30px rgba(30, 68, 106, 0.08);
-  padding: 14px 14px 12px;
+  border: 2px solid rgba(30, 71, 112, 0.3);
+  background: rgba(244, 248, 255, 0.97);
+  box-shadow: 0 16px 40px rgba(30, 68, 106, 0.14);
+  padding: 16px 16px 14px;
   z-index: 2;
 }
 
@@ -1194,34 +1194,39 @@ h3 {
 }
 
 .page-home .hero-cluster__title {
-  font-size: 0.84rem;
+  font-size: 0.88rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #315d8b;
+  color: #234d78;
   font-weight: 800;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .page-home .hero-cluster__list {
   display: grid;
-  gap: 7px;
-  color: #234b76;
-  font-size: 0.9rem;
-  font-weight: 650;
+  gap: 9px;
+  color: #1f456f;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .page-home .hero-cluster__list li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
-.page-home .hero-cluster__dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 999px;
-  background: #9bb9f2;
-  border: 1px solid rgba(35, 77, 121, 0.25);
+.page-home .hero-cluster__icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  border: 1px solid rgba(41, 87, 132, 0.2);
+  background: rgba(208, 224, 255, 0.55);
+  font-size: 0.9rem;
+  line-height: 1;
   flex: none;
 }
 
@@ -1381,17 +1386,17 @@ h3 {
   }
 
   .page-home .hero-cluster {
-    width: 188px;
+    width: 206px;
     top: 18px;
-    padding: 12px 11px;
+    padding: 13px 12px;
   }
 
   .page-home .hero-cluster__title {
-    font-size: 0.76rem;
+    font-size: 0.78rem;
   }
 
   .page-home .hero-cluster__list {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
   }
 
   .page-home .hero--playful .hero__actions--rail {
