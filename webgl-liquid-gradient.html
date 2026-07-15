@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WebGL Liquid Gradient — Standalone</title>
+  <style>
+    html,body{height:100%;margin:0;background:#050711;overflow:hidden}
+    canvas{display:block;width:100vw;height:100vh}
+    .ui{position:fixed;right:12px;top:12px;background:rgba(0,0,0,0.36);backdrop-filter:blur(6px);color:#dfe9f3;padding:10px;border-radius:8px;font:13px/1.2 system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial}
+    .ui button{margin:4px 0;padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit}
+    .ui .row{display:flex;align-items:center;gap:8px;margin:6px 0}
+    .ui input[type=range]{width:150px}
+    .credits{position:fixed;left:12px;bottom:12px;color:#7f97b0;font-size:12px}
+  </style>
+</head>
+<body>
+<canvas id="glcanvas"></canvas>
+<div class="ui" id="ui">
+  <div><strong>Liquid Gradient</strong></div>
+  <div class="row"><button id="presetA">Preset A (Hero)</button><button id="presetB">Preset B (Accent)</button></div>
+  <div class="row"><label>speed</label><input id="speed" type="range" min="0.1" max="3.0" step="0.01"></div>
+  <div class="row"><label>scale</label><input id="scale" type="range" min="0.1" max="2.0" step="0.01"></div>
+  <div class="row"><label>turbAmp</label><input id="turbAmp" type="range" min="0.0" max="2.0" step="0.01"></div>
+  <div class="row"><label>turbFreq</label><input id="turbFreq" type="range" min="0.0" max="2.0" step="0.01"></div>
+  <div class="row"><label>octaves</label><input id="octaves" type="range" min="1" max="8" step="1"></div>
+  <div class="row"><label>bands</label><input id="bands" type="range" min="1" max="6" step="1"></div>
+  <div class="row"><label>contrast</label><input id="contrast" type="range" min="0.2" max="3.0" step="0.01"></div>
+  <div class="row"><label>dither</label><input id="dither" type="range" min="0.0" max="0.12" step="0.001"></div>
+</div>
+<div class="credits">Standalone WebGL2 — domain-warped FBM, Ashima simplex. No build step.</div>
+
+<script>
+/*
+ Tunable parameters (exposed as JS constants/uniforms):
+  - colors: stop0, stop1, stop2 (sRGB 0..255)
+  - speed: animation speed multiplier (seconds-driven)
+  - scale: noise coordinate scale
+  - seed: noise domain offset (float)
+  - turbAmp: domain-warp amplitude
+  - turbFreq: base frequency for turbulence
+  - octaves: number of FBM octaves (use 7 for final)
+  - bands: how many gradient cycles (repeat count)
+  - contrast: gamma/contrast control applied to noise
+  - dither: ordered dither amplitude (approx 0.05 recommended)
+
+ Acceptance notes:
+  - devicePixelRatio capped at 2.0
+  - uses Ashima simplex 2D noise (snoise)
+  - FBM with persistence 0.5, lacunarity 2.0, up to 7 octaves
+  - Domain warp: sample fbm to produce a 2D offset, then sample fbm again
+  - Gradient mixing in linear space (sRGB -> linear (pow 2.2) -> mix -> back)
+  - Ordered 4x4 Bayer dither applied after linear->sRGB conversion
+  - Time driven by performance.now()
+*/
+
+(function(){
+  const canvas = document.getElementById('glcanvas');
+  const gl = canvas.getContext('webgl2', { antialias: true, alpha: false });
+  if(!gl){
+    document.body.innerText = 'WebGL2 not supported in this browser.'; return;
+  }
+
+  // --- Default color stops (sRGB 0..255) ---
+  const stop0 = [11,28,45];
+  const stop1 = [40,64,87];
+  const stop2 = [11,28,45];
+
+  // --- Presets ---
+  const presetA = { speed:1.45, scale:0.68, seed:437.0, turbAmp:0.9, turbFreq:0.46, octaves:7, bands:2.0, contrast:1.2, dither:0.05 };
+  const presetB = { speed:0.81, scale:0.64, seed:40.0, turbAmp:0.34, turbFreq:0.71, octaves:7, bands:2.0, contrast:1.2, dither:0.05 };
+
+  // --- Uniform state (editable) ---
+  const state = Object.assign({}, presetA);
+
+  // --- Shader sources (WebGL2 / GLSL ES 3.00) ---
+  const vs = `#version 300 es
+  in vec2 a_pos; out vec2 v_uv;
+  void main(){ v_uv = a_pos * 0.5 + 0.5; gl_Position = vec4(a_pos,0.0,1.0); }
+  `;
+
+  const fs = `#version 300 es
+  precision highp float;
+  in vec2 v_uv; out vec4 outColor;
+  uniform vec2 u_resolution; uniform float u_time;
+  uniform vec3 u_stop0; uniform vec3 u_stop1; uniform vec3 u_stop2;
+  uniform float u_speed; uniform float u_scale; uniform float u_seed;
+  uniform float u_turbAmp; uniform float u_turbFreq; uniform int u_octaves;
+  uniform sampler2D u_blueNoise;
+  uniform float u_noiseScale;
+  uniform float u_bands; uniform float u_contrast; uniform float u_dither;
+
+  // Ashima 2D simplex noise (common GLSL implementation)
+  // Source: Ashima Arts (https://github.com/ashima/webgl-noise)
+  vec3 mod289(vec3 x){return x - floor(x * (1.0/289.0)) * 289.0;}
+  vec2 mod289(vec2 x){return x - floor(x * (1.0/289.0)) * 289.0;}
+  vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);} 
+  float snoise(vec2 v){
+    const vec4 C = vec4(0.211324865405187, 0.366025403784439,
+                        -0.5773502691896268, 0.024390243902439025);
+    vec2 i = floor(v + dot(v, C.yy) );
+    vec2 x0 = v -   i + dot(i, C.xx);
+    vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+    vec4 x12 = x0.xyxy + C.xxzz;
+    x12.xy -= i1;
+    i = mod289(i);
+    vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0) );
+    vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+    m = m*m; m = m*m;
+    vec3 x = 2.0 * fract(p * C.www) - 1.0;
+    vec3 h = abs(x) - 0.5;
+    vec3 ox = floor(x + 0.5);
+    vec3 a0 = x - ox;
+    m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
+    vec3 g;
+    g.x = a0.x * x0.x + h.x * x0.y;
+    g.y = a0.y * x12.x + h.y * x12.y;
+    g.z = a0.z * x12.z + h.z * x12.w;
+    return 130.0 * dot(m, g);
+  }
+
+  // FBM with persistence=0.5, lacunarity=2.0
+  float fbm(vec2 p, int oct){
+    float v = 0.0; float amp = 0.5; float freq = 1.0;
+    for(int i=0;i<10;i++){ if(i>=oct) break; v += amp * snoise(p * freq); freq *= 2.0; amp *= 0.5; }
+    return v;
+  }
+
+  // Domain warp: sample fbm to make a 2D offset, then sample fbm again
+  vec2 domainWarp(vec2 p, float t, float seed, float turbAmp, float turbFreq, int iter){
+    vec2 q = p;
+    float frequency = turbFreq; float amplitude = turbAmp;
+    for(int i=0;i<7;i++){
+      if(i>=iter) break;
+      float s1 = fbm(q * frequency + vec2(seed + t*0.05), 3);
+      float s2 = fbm(q * frequency + vec2(seed*1.31 + t*0.03), 3);
+      q += vec2(s1, s2) * amplitude * 0.6;
+      frequency *= 1.9; amplitude *= 0.6;
+    }
+    return q;
+  }
+
+  // sRGB <-> linear conversions (approx gamma 2.2)
+  vec3 sRGBToLinear(vec3 c){ return pow(c, vec3(2.2)); }
+  vec3 linearTosRGB(vec3 c){ return pow(c, vec3(1.0/2.2)); }
+
+  // Blue-noise dither: sample a repeatable tile texture and map to -0.5..0.5
+  float blueNoiseDither(vec2 uv){
+    // tile the noise across the screen using u_noiseScale
+    vec2 nuv = fract(uv * u_noiseScale);
+    float v = texture(u_blueNoise, nuv).r;
+    return (v - 0.5);
+  }
+
+  // gradient mapping across three stops with 'bands' repetition
+  vec3 mapGradient(float v){
+    float cyc = fract(v * u_bands);
+    float m = smoothstep(0.0,1.0,cyc);
+    vec3 c;
+    if(m < 0.5){ c = mix(u_stop0, u_stop1, m*2.0); }
+    else { c = mix(u_stop1, u_stop2, (m-0.5)*2.0); }
+    return c;
+  }
+
+  void main(){
+    // normalize coords - maintain aspect
+    vec2 uv = v_uv;
+    vec2 p = (uv - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
+    float t = u_time * u_speed;
+
+    // primary domain warp
+    vec2 base = p * u_scale;
+    vec2 warp = domainWarp(base, t, u_seed, u_turbAmp, u_turbFreq, u_octaves);
+    float n = fbm(warp + vec2(t*0.2), u_octaves);
+
+    // secondary accent domain warp (slower scale)
+    vec2 base2 = p * (u_scale * 1.6);
+    vec2 warp2 = domainWarp(base2, t*0.9, u_seed + 100.0, u_turbAmp*0.6, u_turbFreq*1.2, u_octaves);
+    float n2 = fbm(warp2 + vec2(t*0.3), u_octaves);
+
+    float combined = mix(n, n2, 0.45);
+    combined = combined * 0.5 + 0.5; // normalize to 0..1
+
+    // apply contrast/gamma-like tweak in linear domain
+    float lin = pow(combined, 1.0 / u_contrast);
+
+    // colorize in linear space
+    vec3 c0 = sRGBToLinear(u_stop0/255.0);
+    vec3 c1 = sRGBToLinear(u_stop1/255.0);
+    vec3 c2 = sRGBToLinear(u_stop2/255.0);
+
+    float cyc = fract(lin * u_bands);
+    float mm = smoothstep(0.0, 1.0, cyc);
+    vec3 linearColor;
+    if(mm < 0.5) linearColor = mix(c0, c1, mm*2.0);
+    else linearColor = mix(c1, c2, (mm-0.5)*2.0);
+
+    // subtle sheen in linear space
+    float sheen = smoothstep(0.5, 0.9, fbm(p * 4.0 + vec2(u_time*0.4), min(4,u_octaves)));
+    linearColor += vec3(0.02,0.03,0.06) * sheen * 0.8;
+
+    // convert back to sRGB for display
+    vec3 srgb = linearTosRGB(linearColor);
+
+    // apply blue-noise dither AFTER conversion to sRGB (preferred)
+    float d = blueNoiseDither(v_uv) * u_dither;
+    srgb += vec3(d);
+
+    // clamp and output
+    outColor = vec4(clamp(srgb,0.0,1.0), 1.0);
+  }
+  `;
+
+  // --- Compile helper ---
+  function compileShader(src, type){
+    const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+      console.error(gl.getShaderInfoLog(s)); console.log(src); throw new Error('Shader compile error');
+    }
+    return s;
+  }
+
+  // --- Build program ---
+  const prog = gl.createProgram();
+  const vsh = compileShader(vs, gl.VERTEX_SHADER);
+  const fsh = compileShader(fs, gl.FRAGMENT_SHADER);
+  gl.attachShader(prog, vsh); gl.attachShader(prog, fsh);
+  gl.bindAttribLocation(prog, 0, 'a_pos');
+  gl.linkProgram(prog);
+  if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){
+    console.error(gl.getProgramInfoLog(prog)); throw new Error('Program link error');
+  }
+
+  // fullscreen quad
+  const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+  function resize(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.floor(canvas.clientWidth * dpr);
+    const h = Math.floor(canvas.clientHeight * dpr);
+    if(canvas.width !== w || canvas.height !== h){
+      canvas.width = w; canvas.height = h; gl.viewport(0,0,w,h);
+    }
+  }
+  // start size
+  resize();
+  window.addEventListener('resize', resize);
+
+  // locate uniforms
+  const uniforms = {
+    u_resolution: gl.getUniformLocation(prog, 'u_resolution'),
+    u_time: gl.getUniformLocation(prog, 'u_time'),
+    u_stop0: gl.getUniformLocation(prog, 'u_stop0'),
+    u_stop1: gl.getUniformLocation(prog, 'u_stop1'),
+    u_stop2: gl.getUniformLocation(prog, 'u_stop2'),
+    u_speed: gl.getUniformLocation(prog, 'u_speed'),
+    u_scale: gl.getUniformLocation(prog, 'u_scale'),
+    u_seed: gl.getUniformLocation(prog, 'u_seed'),
+    u_turbAmp: gl.getUniformLocation(prog, 'u_turbAmp'),
+    u_turbFreq: gl.getUniformLocation(prog, 'u_turbFreq'),
+    u_octaves: gl.getUniformLocation(prog, 'u_octaves'),
+    u_bands: gl.getUniformLocation(prog, 'u_bands'),
+    u_contrast: gl.getUniformLocation(prog, 'u_contrast'),
+    u_dither: gl.getUniformLocation(prog, 'u_dither'),
+    u_blueNoise: gl.getUniformLocation(prog, 'u_blueNoise'),
+    u_noiseScale: gl.getUniformLocation(prog, 'u_noiseScale')
+  };
+
+  // enable attribute
+  gl.useProgram(prog);
+  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.enableVertexAttribArray(0);
+  gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+
+  // set constant colors (as uniforms)
+  gl.uniform3f(uniforms.u_stop0, stop0[0], stop0[1], stop0[2]);
+  gl.uniform3f(uniforms.u_stop1, stop1[0], stop1[1], stop1[2]);
+  gl.uniform3f(uniforms.u_stop2, stop2[0], stop2[1], stop2[2]);
+
+  // --- create blue-noise texture (runtime-generated tile) ---
+  function makeBlueNoiseTile(size){
+    const c = document.createElement('canvas'); c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const img = ctx.createImageData(size, size);
+    for(let i=0;i<size*size;i++){
+      // start with random grayscale; we'll blur slightly to reduce harshness
+      const v = Math.floor(Math.random()*256);
+      img.data[i*4+0] = v; img.data[i*4+1] = v; img.data[i*4+2] = v; img.data[i*4+3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    // small blur pass to soften; use canvas filter if available
+    try { ctx.filter = 'blur(0.6px)'; ctx.drawImage(c, 0, 0); ctx.filter = 'none'; } catch(e){}
+    return c;
+  }
+
+  const noiseTile = makeBlueNoiseTile(128);
+  const noiseTex = gl.createTexture(); gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, noiseTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, noiseTile);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  // bind the texture unit to the shader uniform
+  gl.uniform1i(uniforms.u_blueNoise, 0);
+  // default tile scale (how many tiles across the screen)
+  gl.uniform1f(uniforms.u_noiseScale, 64.0);
+
+  // UI wiring
+  const qs = (id)=>document.getElementById(id);
+  qs('presetA').onclick = ()=>{ Object.assign(state, presetA); syncUI(); };
+  qs('presetB').onclick = ()=>{ Object.assign(state, presetB); syncUI(); };
+  const inputs = ['speed','scale','turbAmp','turbFreq','octaves','bands','contrast','dither'];
+  function syncUI(){
+    qs('speed').value = state.speed; qs('scale').value = state.scale; qs('turbAmp').value = state.turbAmp; qs('turbFreq').value = state.turbFreq;
+    qs('octaves').value = state.octaves; qs('bands').value = state.bands; qs('contrast').value = state.contrast; qs('dither').value = state.dither;
+  }
+  inputs.forEach(id=>{
+    qs(id).addEventListener('input', (e)=>{
+      const val = e.target.type === 'range' && id!=='octaves' ? parseFloat(e.target.value) : parseFloat(e.target.value);
+      state[id] = val; if(id==='octaves') state.octaves = Math.max(1, Math.floor(val));
+    });
+  });
+  syncUI();
+
+  // render loop
+  let start = performance.now();
+  function draw(){
+    resize();
+    gl.useProgram(prog);
+    const w = canvas.width, h = canvas.height;
+    gl.uniform2f(uniforms.u_resolution, w, h);
+    const t = (performance.now() - start) * 0.001;
+    gl.uniform1f(uniforms.u_time, t);
+
+    // set parameter uniforms
+    gl.uniform1f(uniforms.u_speed, state.speed);
+    gl.uniform1f(uniforms.u_scale, state.scale);
+    gl.uniform1f(uniforms.u_seed, state.seed || 0.0);
+    gl.uniform1f(uniforms.u_turbAmp, state.turbAmp);
+    gl.uniform1f(uniforms.u_turbFreq, state.turbFreq);
+    gl.uniform1i(uniforms.u_octaves, state.octaves|0);
+    gl.uniform1f(uniforms.u_bands, state.bands);
+    gl.uniform1f(uniforms.u_contrast, state.contrast);
+    gl.uniform1f(uniforms.u_dither, state.dither);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  // initial preset
+  Object.assign(state, presetA); syncUI();
+
+  // Short helper: how to swap in blue-noise texture for dither (comment):
+  // Replace bayerDither usage by sampling a small blue-noise texture tile with
+  // fract(gl_FragCoord.xy / vec2(tileSize)) and multiply by u_dither.
+
+  // Quick tips: if motion feels too fast/slow adjust 'speed' and 'scale'.
+  // If warp feels too strong/weak adjust 'turbAmp' and 'turbFreq'.
+
+})();
+</script>
+</body>
+</html>
