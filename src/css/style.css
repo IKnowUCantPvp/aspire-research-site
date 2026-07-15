@@ -1225,9 +1225,17 @@ h3 {
   border-radius: 8px;
   border: 1px solid rgba(41, 87, 132, 0.2);
   background: rgba(208, 224, 255, 0.55);
-  font-size: 0.9rem;
-  line-height: 1;
   flex: none;
+}
+
+.page-home .hero-cluster__icon-svg {
+  width: 16px;
+  height: 16px;
+  stroke: #2a5885;
+  stroke-width: 1.9;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .page-home .hero-doodle {
