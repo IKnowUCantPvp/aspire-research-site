@@ -481,6 +481,14 @@ h3 {
   -moz-user-select: none;
   user-select: none;
 }
+
+/* Remove default browser blue outline on mouse focus, keep keyboard focus indicators */
+:focus { outline: none; }
+:focus:not(:focus-visible) { outline: none; }
+:focus-visible {
+  outline: 3px solid rgba(245,214,132,0.6);
+  outline-offset: 2px;
+}
 .hero-bg__layer {
   position: absolute;
   inset: -6% -8% -6% -8%;
