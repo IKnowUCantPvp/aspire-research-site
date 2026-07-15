@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WebGL Velvet Prototype</title>
+  <style>html,body{height:100%;margin:0;background:#050711;overflow:hidden}#container{width:100%;height:100vh}</style>
+</head>
+<body>
+  <div id="container"></div>
+  <script src="https://unpkg.com/three@0.154.0/build/three.min.js"></script>
+  <script>
+  // Three.js WebGL prototype: domain-warped FBM velvet with two layers
+  (function () {
+    const container = document.getElementById('container');
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    container.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+
+    // Uniforms using your exact settings
+    const uniforms = {
+      u_time: { value: 0 },
+      u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+      palette0: { value: new THREE.Vector3(11/255,28/255,45/255) },
+      palette1: { value: new THREE.Vector3(40/255,64/255,87/255) },
+      palette2: { value: new THREE.Vector3(11/255,28/255,45/255) },
+
+      // main layer
+      main_speed: { value: 1.45 },
+      main_scale: { value: 0.68 },
+      main_seed: { value: 437.0 },
+      main_turbAmp: { value: 0.9 },
+      main_turbFreq: { value: 0.46 },
+      main_iter: { value: 7.0 },
+
+      // accent layer
+      acc_speed: { value: 0.81 },
+      acc_scale: { value: 0.64 },
+      acc_seed: { value: 40.0 },
+      acc_turbAmp: { value: 0.34 },
+      acc_turbFreq: { value: 0.71 },
+      acc_iter: { value: 7.0 },
+
+      bands: { value: 2.0 },
+      contrast: { value: 1.2 },
+      dither: { value: 0.05 }
+    };
+
+    // fullscreen quad
+    const geom = new THREE.BufferGeometry();
+    const verts = new Float32Array([-1,-1, 1,-1, -1,1, 1,1]);
+    geom.setAttribute('position', new THREE.BufferAttribute(verts,2));
+
+    const frag = `
+    precision highp float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec3 palette0;
+    uniform vec3 palette1;
+    uniform vec3 palette2;
+    uniform float main_speed, main_scale, main_seed, main_turbAmp, main_turbFreq, main_iter;
+    uniform float acc_speed, acc_scale, acc_seed, acc_turbAmp, acc_turbFreq, acc_iter;
+    uniform float bands, contrast, dither;
+    varying vec2 vUv;
+
+    // 2D hash / noise (iq)
+    vec3 mod289(vec3 x){return x - floor(x * (1.0/289.0)) * 289.0;}
+    vec2 mod289(vec2 x){return x - floor(x * (1.0/289.0)) * 289.0;}
+    vec3 permute(vec3 x){return mod289(((x*34.0)+1.0)*x);} 
+    float snoise(vec2 v){
+      const vec4 C = vec4(0.211324865405187, 0.366025403784439,
+                          -0.5773502691896268, 0.024390243902439025);
+      vec2 i = floor(v + dot(v, C.yy) );
+      vec2 x0 = v -   i + dot(i, C.xx);
+      vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+      vec4 x12 = x0.xyxy + C.xxzz;
+      x12.xy -= i1;
+      i = mod289(i);
+      vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0) );
+      vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+      m = m*m; m = m*m;
+      vec3 x = 2.0 * fract(p * C.www) - 1.0;
+      vec3 h = abs(x) - 0.5;
+      vec3 ox = floor(x + 0.5);
+      vec3 a0 = x - ox;
+      m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
+      vec3 g;
+      g.x = a0.x * x0.x + h.x * x0.y;
+      g.y = a0.y * x12.x + h.y * x12.y;
+      g.z = a0.z * x12.z + h.z * x12.w;
+      return 130.0 * dot(m, g);
+    }
+
+    float fbm(vec2 p, float nOctaves){
+      float v = 0.0;
+      float a = 0.5;
+      for(int i=0;i<10;i++){
+        if(i>=int(nOctaves)) break;
+        v += a * snoise(p);
+        p *= 2.0;
+        a *= 0.5;
+      }
+      return v;
+    }
+
+    // domain warp: offset coords by noise
+    vec2 domainWarp(vec2 p, float time, float seed, float turbAmp, float turbFreq, float iter){
+      float amplitude = turbAmp;
+      float frequency = turbFreq;
+      vec2 q = p;
+      for(int i=0;i<7;i++){
+        if(i >= int(iter)) break;
+        float t = fbm(q * frequency + vec2(seed + time * 0.05), 3.0);
+        q += vec2(t, fbm(q*frequency + vec2(seed*1.3 + time*0.03),3.0)) * amplitude * 0.5;
+        frequency *= 1.9;
+        amplitude *= 0.6;
+      }
+      return q;
+    }
+
+    vec3 mapGradient(float v){
+      // repeat gradient 'bands' times
+      float cyc = fract(v * bands);
+      // map to 0..1 with smoothstep
+      float m = smoothstep(0.0,1.0,cyc);
+      // map across palette0 -> palette1 -> palette2
+      if(m < 0.5){
+        return mix(palette0, palette1, m*2.0);
+      } else {
+        return mix(palette1, palette2, (m-0.5)*2.0);
+      }
+    }
+
+    float rand(vec2 co){return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);} 
+
+    void main(){
+      vec2 uv = gl_FragCoord.xy / u_resolution.xy;
+      // normalize and center
+      vec2 p = (uv - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0);
+
+      // MAIN LAYER
+      float mainT = u_time * main_speed;
+      vec2 mp = p * main_scale;
+      vec2 mWarp = domainWarp(mp, mainT, main_seed, main_turbAmp, main_turbFreq, main_iter);
+      float mn = fbm(mWarp + vec2(mainT * 0.2), main_iter);
+
+      // ACCENT LAYER
+      float accT = u_time * acc_speed;
+      vec2 ap = p * acc_scale * 1.6;
+      vec2 aWarp = domainWarp(ap, accT, acc_seed, acc_turbAmp, acc_turbFreq, acc_iter);
+      float an = fbm(aWarp + vec2(accT * 0.3), acc_iter);
+
+      // combine and normalize
+      float combined = mix(mn, an, 0.45);
+      combined = combined * 0.5 + 0.5; // bring to 0..1
+
+      // apply contrast
+      combined = pow(combined, 1.0/contrast);
+
+      // map gradient
+      vec3 col = mapGradient(combined);
+
+      // subtle sheen
+      float sheen = smoothstep(0.5, 0.9, fbm(p * 4.0 + vec2(u_time*0.4), 4.0));
+      col += vec3(0.02,0.03,0.06) * sheen * 0.8;
+
+      // dither
+      float noise = (rand(gl_FragCoord.xy) - 0.5) * dither;
+      col += vec3(noise);
+
+      gl_FragColor = vec4(col,1.0);
+    }
+    `;
+
+    const mat = new THREE.RawShaderMaterial({
+      uniforms: uniforms,
+      vertexShader: `attribute vec2 position; varying vec2 vUv; void main(){ vUv = position * 0.5 + 0.5; gl_Position = vec4(position, 0.0, 1.0); }`,
+      fragmentShader: frag
+    });
+
+    const mesh = new THREE.Mesh(geom, mat);
+    scene.add(mesh);
+
+    function onResize(){
+      const w = window.innerWidth; const h = window.innerHeight;
+      renderer.setSize(w,h);
+      uniforms.u_resolution.value.set(w,h);
+    }
+    window.addEventListener('resize', onResize, { passive: true });
+    onResize();
+
+    const clock = new THREE.Clock();
+    function animate(){
+      uniforms.u_time.value = clock.getElapsedTime();
+      renderer.render(scene, camera);
+      requestAnimationFrame(animate);
+    }
+    animate();
+  })();
+  </script>
+</body>
+</html>
