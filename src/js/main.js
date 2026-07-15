@@ -19,6 +19,8 @@
 (function () {
   var t1 = document.getElementById('turb1');
   var t2 = document.getElementById('turb2');
+  var d1 = document.getElementById('disp1');
+  var d2 = document.getElementById('disp2');
   if (!t1 || !t2) return;
   var start = performance.now();
   function animate(now) {
@@ -28,6 +30,9 @@
     var bf2 = 0.018 + Math.cos(t * 0.45) * 0.006 + (Math.cos(t * 0.09) * 0.001);
     t1.setAttribute('baseFrequency', bf1.toFixed(5));
     t2.setAttribute('baseFrequency', bf2.toFixed(5));
+    // animate displacement scales for more visible folds
+    if (d1) d1.setAttribute('scale', (28 + Math.sin(t * 0.8) * 8 + Math.sin(t * 0.15) * 3).toFixed(1));
+    if (d2) d2.setAttribute('scale', (10 + Math.cos(t * 0.6) * 6 + Math.cos(t * 0.11) * 2).toFixed(1));
     requestAnimationFrame(animate);
   }
   requestAnimationFrame(animate);

@@ -14,11 +14,13 @@ layout: base.njk
     <filter id="velvetTurbulence1">
       <feTurbulence id="turb1" baseFrequency="0.007" numOctaves="3" seed="2" stitchTiles="stitch" />
       <feColorMatrix type="saturate" values="0.2" />
-      <feDisplacementMap in="SourceGraphic" scale="30" xChannelSelector="R" yChannelSelector="G" />
+      <feDisplacementMap id="disp1" in="SourceGraphic" scale="30" xChannelSelector="R" yChannelSelector="G" />
+      <feGaussianBlur stdDeviation="6" result="blur1" />
     </filter>
     <filter id="velvetTurbulence2">
       <feTurbulence id="turb2" baseFrequency="0.02" numOctaves="2" seed="6" stitchTiles="stitch" />
-      <feDisplacementMap in="SourceGraphic" scale="12" xChannelSelector="R" yChannelSelector="G" />
+      <feDisplacementMap id="disp2" in="SourceGraphic" scale="12" xChannelSelector="R" yChannelSelector="G" />
+      <feGaussianBlur stdDeviation="8" result="blur2" />
     </filter>
   </svg>
 
