@@ -9,6 +9,7 @@
 <body>
   <div id="container"></div>
   <script src="https://unpkg.com/three@0.154.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lil-gui@0.18/dist/lil-gui.min.js"></script>
   <script>
   // Three.js WebGL prototype: domain-warped FBM velvet with two layers
   (function () {
@@ -184,6 +185,44 @@
 
     const mesh = new THREE.Mesh(geom, mat);
     scene.add(mesh);
+
+    // --- GUI for live tweaking and preset loading ---
+    try {
+      const gui = new window.lil.GUI({ title: 'Velvet Controls' });
+      const main = gui.addFolder('Main layer');
+      main.add(uniforms.main_speed, 'value', 0.1, 3, 0.01).name('speed');
+      main.add(uniforms.main_scale, 'value', 0.1, 2, 0.01).name('scale');
+      main.add(uniforms.main_turbAmp, 'value', 0.0, 2, 0.01).name('turbAmp');
+      main.add(uniforms.main_turbFreq, 'value', 0.0, 2, 0.01).name('turbFreq');
+      main.add(uniforms.main_iter, 'value', 1, 10, 1).name('iterations');
+      const acc = gui.addFolder('Accent layer');
+      acc.add(uniforms.acc_speed, 'value', 0.1, 3, 0.01).name('speed');
+      acc.add(uniforms.acc_scale, 'value', 0.1, 2, 0.01).name('scale');
+      acc.add(uniforms.acc_turbAmp, 'value', 0.0, 2, 0.01).name('turbAmp');
+      acc.add(uniforms.acc_turbFreq, 'value', 0.0, 2, 0.01).name('turbFreq');
+      acc.add(uniforms.acc_iter, 'value', 1, 10, 1).name('iterations');
+      const common = gui.addFolder('Common');
+      common.add(uniforms.bands, 'value', 1, 6, 1).name('bands');
+      common.add(uniforms.contrast, 'value', 0.2, 3, 0.01).name('contrast');
+      common.add(uniforms.dither, 'value', 0.0, 0.12, 0.001).name('dither');
+
+      const preset = {
+        loadTarget: function(){
+          // exact settings from your brief
+          uniforms.main_speed.value = 1.45; uniforms.main_scale.value = 0.68; uniforms.main_seed.value = 437.0; uniforms.main_turbAmp.value = 0.9; uniforms.main_turbFreq.value = 0.46; uniforms.main_iter.value = 7.0;
+          uniforms.acc_speed.value = 0.81; uniforms.acc_scale.value = 0.64; uniforms.acc_seed.value = 40.0; uniforms.acc_turbAmp.value = 0.34; uniforms.acc_turbFreq.value = 0.71; uniforms.acc_iter.value = 7.0;
+          uniforms.bands.value = 2.0; uniforms.contrast.value = 1.2; uniforms.dither.value = 0.05;
+        },
+        snapshot: function(){
+          const link = document.createElement('a');
+          link.href = renderer.domElement.toDataURL('image/png');
+          link.download = 'velvet-snapshot.png';
+          link.click();
+        }
+      };
+      gui.add(preset, 'loadTarget').name('Load exact preset');
+      gui.add(preset, 'snapshot').name('Save PNG snapshot');
+    } catch (e) { console.warn('GUI not available', e); }
 
     function onResize(){
       const w = window.innerWidth; const h = window.innerHeight;
