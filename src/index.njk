@@ -2,8 +2,9 @@
 title: Aspire Fellowship
 description: "Summer Application Now Open! A selective 12 week program that helps ambitious students create graduate-level research through elite mentorship."
 layout: base.njk
+bodyClass: page-home
 ---
-<section class="hero section--no-border section">
+<section class="hero hero--playful section--no-border section">
   <div class="hero-bg" aria-hidden="true">
     <div class="hero-bg__layer" style="--i:1"></div>
     <div class="hero-bg__layer" style="--i:2"></div>
@@ -26,13 +27,85 @@ layout: base.njk
 
   <div class="hero-velvet" aria-hidden="true"></div>
   <canvas id="velvet-canvas" aria-hidden="true"></canvas>
+
   <div class="hero__inner">
     <p class="hero__eyebrow">The Aspire Fellowship</p>
-    <h1 class="hero-title"><span id="hero-title-text" aria-live="polite"></span><span class="hero-caret" aria-hidden="true">|</span></h1>
+    <h1 class="hero-title hero-title--playful">
+      <span class="hero-title__line">
+        The
+        <span class="hero-title__ring-wrap">
+          <span class="hero-title__ring-text">#1</span>
+          <svg class="hero-title__ring" viewBox="0 0 140 72" aria-hidden="true">
+            <path d="M8 36C8 16 30 4 67 4c40 0 64 12 64 32 0 18-23 33-63 33C30 69 8 57 8 36z"></path>
+          </svg>
+        </span>
+        High School
+      </span>
+      <span class="hero-title__line">Research Experience.</span>
+    </h1>
 
-    <div class="hero__actions">
-      <a href="/access-application/" class="btn btn--gold">Apply now</a>
-      <a href="/mission/" class="btn btn--outline">Learn More</a>
+    <p class="hero__sub hero__sub--playful">Learn directly from elite mentors, design real experiments, and present standout science fair-ready research.</p>
+
+    <div class="hero-showcase" aria-label="Science research graphic">
+      <div class="hero-showcase__bar" aria-hidden="true">
+        <span class="hero-showcase__bar-main"></span>
+        <span class="hero-showcase__bar-accent"></span>
+      </div>
+
+      <div class="hero-showcase__graphic" aria-hidden="true">
+        <svg viewBox="0 0 980 460" class="hero-doodle" role="img" aria-label="Student researcher surrounded by science icons">
+          <g stroke="currentColor" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="490" cy="105" r="36"></circle>
+            <path d="M432 148c22 20 94 20 116 0"></path>
+            <path d="M418 222c22-56 128-56 150 0v138H418V222z"></path>
+            <path d="M417 251c-53 16-90 40-131 84"></path>
+            <path d="M568 251c53 16 90 40 131 84"></path>
+            <path d="M286 335c38 22 80 22 114-2"></path>
+            <path d="M698 335c-38 22-80 22-114-2"></path>
+
+            <rect x="170" y="55" width="128" height="86" rx="12"></rect>
+            <path d="M186 75h96M186 98h68M186 122h92"></path>
+            <path d="M738 78l82 32-24 68-82-32z"></path>
+            <path d="M742 79l69 27M718 144c18 20 41 30 76 30"></path>
+            <path d="M114 292c40-22 71-32 116-32"></path>
+            <path d="M734 284c34-17 63-25 108-24"></path>
+            <path d="M236 245l-26 50m10-31l30 19"></path>
+
+            <path d="M516 74c14-22 36-33 60-34"></path>
+            <path d="M598 28c16 2 26 11 32 25"></path>
+            <path d="M594 55c11 2 20 8 25 17"></path>
+          </g>
+
+          <g class="hero-doodle__badge" transform="translate(640 210)">
+            <rect x="0" y="0" width="184" height="114" rx="18"></rect>
+            <path d="M24 83h136"></path>
+            <path d="M28 34c32 26 53 26 94 0"></path>
+            <path d="M119 39l16 22 24-36"></path>
+          </g>
+
+          <g class="hero-doodle__word word--papers" transform="translate(102 236) rotate(-8)">
+            <text x="0" y="0">RESEARCH PAPERS</text>
+          </g>
+          <g class="hero-doodle__word word--charts" transform="translate(338 258) rotate(11)">
+            <text x="0" y="0">CHARTS</text>
+          </g>
+          <g class="hero-doodle__word word--microscope" transform="translate(628 259) rotate(-9)">
+            <text x="0" y="0">MICROSCOPE</text>
+          </g>
+          <g class="hero-doodle__word word--board" transform="translate(752 235) rotate(14)">
+            <text x="0" y="0">SCIENCE FAIR BOARD</text>
+          </g>
+        </svg>
+
+        <span class="hero-float hero-float--a"></span>
+        <span class="hero-float hero-float--b"></span>
+        <span class="hero-float hero-float--c"></span>
+      </div>
+
+      <div class="hero__actions hero__actions--rail">
+        <a href="/access-application/" class="btn btn--gold">Apply Now</a>
+        <a href="/mission/" class="btn btn--outline">Learn More</a>
+      </div>
     </div>
 
     <div class="hero__countdown">

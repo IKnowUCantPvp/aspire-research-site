@@ -70,10 +70,18 @@
     '}\n' +
     'float fbm(vec2 p){ float v=0.0; float a=0.5; for(int i=0;i<5;i++){ v += a * snoise(p); p *= 2.0; a *= 0.5;} return v; }\n' +
     'void main(){\n' +
-    '  vec2 uv = v_uv * vec2(u_res.x/u_res.y,1.0);\n+    '  float t = u_time * 0.12;\n+    '  float n = fbm(uv * 1.6 - vec2(t*0.6, t*0.4));\n' +
+    '  vec2 uv = v_uv * vec2(u_res.x/u_res.y,1.0);\n' +
+    '  float t = u_time * 0.12;\n' +
+    '  float n = fbm(uv * 1.6 - vec2(t*0.6, t*0.4));\n' +
     '  float n2 = fbm(uv * 3.0 + vec2(t*0.8, -t*0.5));\n' +
-    '  float v = mix(n, n2, 0.45);\n+    '  vec3 base = vec3(0.03,0.09,0.17) * 1.0;\n+    '  vec3 highlight = vec3(0.08,0.16,0.28) * (0.6 + v*0.6);\n+    '  vec3 col = mix(base, highlight, smoothstep(-0.3,0.6,v));\n+    '  // sheen streaks\n' +
-    '  float streak = smoothstep(0.45,0.7, fbm(uv*6.0 + vec2(t*1.2)) );\n+    '  col += vec3(0.08,0.12,0.18) * streak * 0.6;\n+    '  gl_FragColor = vec4(col, 1.0);\n+    '}\n';
+    '  float v = mix(n, n2, 0.45);\n' +
+    '  vec3 base = vec3(0.03,0.09,0.17) * 1.0;\n' +
+    '  vec3 highlight = vec3(0.08,0.16,0.28) * (0.6 + v*0.6);\n' +
+    '  vec3 col = mix(base, highlight, smoothstep(-0.3,0.6,v));\n' +
+    '  float streak = smoothstep(0.45,0.7, fbm(uv*6.0 + vec2(t*1.2)) );\n' +
+    '  col += vec3(0.08,0.12,0.18) * streak * 0.6;\n' +
+    '  gl_FragColor = vec4(col, 1.0);\n' +
+    '}\n';
 
   function compileShader(src, type) {
     var sh = gl.createShader(type);
