@@ -548,6 +548,36 @@ h3 {
   animation: velvetSheen 8s linear infinite;
 }
 
+/* WebGL velvet canvas (high-fidelity) */
+#velvet-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -2;
+  display: block;
+  pointer-events: none;
+}
+.no-webgl #velvet-canvas { display: none; }
+.no-webgl .hero-velvet { z-index: -1; }
+
+/* Premium visual refinements */
+.site-header {
+  background: linear-gradient(180deg, rgba(10,10,10,0.85), rgba(6,6,6,0.6));
+  box-shadow: 0 6px 30px rgba(3,6,12,0.55);
+}
+.primary-nav__link { letter-spacing: 0.01em; font-weight: 500; }
+.btn--gold {
+  background: linear-gradient(180deg,#ffd98c,#f5d684);
+  color: #081016;
+  box-shadow: 0 8px 26px rgba(6,10,18,0.5);
+  padding: 12px 18px;
+  border-radius: 28px;
+}
+.btn--outline { border: 1px solid rgba(255,255,255,0.08); padding: 10px 16px; border-radius: 20px; }
+.hero__inner { padding-top: 48px; padding-bottom: 48px; }
+.hero h1 { letter-spacing: -0.02em; }
+
 @keyframes velvetSheen {
   0% { background-position: 0% 40%, center; opacity: 0.95 }
   50% { background-position: 100% 60%, center; opacity: 0.7 }
