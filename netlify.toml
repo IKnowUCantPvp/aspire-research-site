@@ -9,3 +9,5 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Redeploy trigger: updated at 2026-07-15 to prompt Netlify to rebuild after dependency change
