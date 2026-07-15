@@ -380,14 +380,13 @@ h3 {
   position: absolute;
   inset: 0;
   /* subtle moving gradient overlay */
-  background: linear-gradient(120deg, rgba(245,214,132,0.06), rgba(255,255,255,0.02) 30%, rgba(10,10,10,0) 60%);
+  background: linear-gradient(120deg, rgba(245,214,132,0.04), rgba(255,255,255,0.01) 30%, rgba(10,10,10,0) 60%);
   background-size: 200% 200%;
   transform: translateZ(0);
-  animation: heroGradient 20s linear infinite;
   pointer-events: none;
   z-index: 0;
   mix-blend-mode: overlay;
-  opacity: 0.9;
+  opacity: 0.4;
 }
 
 .hero > .hero__inner { position: relative; z-index: 1; }
@@ -463,6 +462,65 @@ h3 {
 @keyframes logo-marquee-rtl {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
+}
+
+/* Hero background layers */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hero-bg__layer {
+  position: absolute;
+  inset: -10% -20% -10% -20%;
+  background-image: url('/assets/images/hero-bg.svg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  opacity: 0.6;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity;
+}
+.hero-bg__layer[style*='--i:1'] {
+  animation: heroMoveA 18s cubic-bezier(.2,.8,.2,.9) infinite;
+  opacity: 0.65;
+  filter: blur(8px);
+}
+.hero-bg__layer[style*='--i:2'] {
+  animation: heroMoveB 26s cubic-bezier(.3,.7,.25,.95) infinite;
+  opacity: 0.45;
+  mix-blend-mode: screen;
+  filter: blur(12px);
+}
+.hero-bg__layer[style*='--i:3'] {
+  animation: heroMoveC 34s cubic-bezier(.25,.9,.1,.9) infinite;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  filter: blur(18px);
+}
+
+@keyframes heroMoveA {
+  0% { transform: translate3d(-6%, -2%, 0) scale(1.02) rotate(-1deg); }
+  25% { transform: translate3d(6%, -4%, 0) scale(1.03) rotate(1deg); }
+  50% { transform: translate3d(12%, 2%, 0) scale(1.04) rotate(0.5deg); }
+  75% { transform: translate3d(-4%, 6%, 0) scale(1.02) rotate(-0.4deg); }
+  100% { transform: translate3d(-6%, -2%, 0) scale(1.02) rotate(-1deg); }
+}
+@keyframes heroMoveB {
+  0% { transform: translate3d(0%, 6%, 0) scale(1.01) rotate(0deg); }
+  33% { transform: translate3d(-8%, -6%, 0) scale(1.025) rotate(-1.2deg); }
+  66% { transform: translate3d(10%, 4%, 0) scale(1.03) rotate(1.2deg); }
+  100% { transform: translate3d(0%, 6%, 0) scale(1.01) rotate(0deg); }
+}
+@keyframes heroMoveC {
+  0% { transform: translate3d(4%, -6%, 0) scale(1.015) rotate(0.8deg); }
+  50% { transform: translate3d(-10%, 10%, 0) scale(1.05) rotate(-0.8deg); }
+  100% { transform: translate3d(4%, -6%, 0) scale(1.015) rotate(0.8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-bg__layer { animation: none !important; }
 }
 
 /* ===================== Mission intro ===================== */
