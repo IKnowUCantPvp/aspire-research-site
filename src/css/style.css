@@ -60,6 +60,10 @@ body::before {
   z-index: 0;
 }
 
+/* Make text selection subtler across the site */
+::selection { background: rgba(245,214,132,0.12); color: #ffffff; }
+::-moz-selection { background: rgba(245,214,132,0.12); color: #ffffff; }
+
 .site-header, main, .site-footer { position: relative; z-index: 1; }
 
 .skip-link {
@@ -471,6 +475,11 @@ h3 {
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+}
+.hero-bg, .hero-bg * {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
 }
 .hero-bg__layer {
   position: absolute;
