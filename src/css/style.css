@@ -1171,6 +1171,60 @@ h3 {
   padding: 20px 24px 108px;
 }
 
+.page-home .hero-cluster {
+  position: absolute;
+  top: 28px;
+  width: 220px;
+  border-radius: 18px;
+  border: 2px solid rgba(30, 71, 112, 0.2);
+  background: rgba(244, 248, 255, 0.92);
+  box-shadow: 0 10px 30px rgba(30, 68, 106, 0.08);
+  padding: 14px 14px 12px;
+  z-index: 2;
+}
+
+.page-home .hero-cluster--left {
+  left: 18px;
+  transform: rotate(-2deg);
+}
+
+.page-home .hero-cluster--right {
+  right: 18px;
+  transform: rotate(2deg);
+}
+
+.page-home .hero-cluster__title {
+  font-size: 0.84rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #315d8b;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.page-home .hero-cluster__list {
+  display: grid;
+  gap: 7px;
+  color: #234b76;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.page-home .hero-cluster__list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.page-home .hero-cluster__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #9bb9f2;
+  border: 1px solid rgba(35, 77, 121, 0.25);
+  flex: none;
+}
+
 .page-home .hero-doodle {
   width: 100%;
   height: auto;
@@ -1189,6 +1243,10 @@ h3 {
   font-size: 21px;
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+.page-home .hero-doodle__word {
+  display: none;
 }
 
 .page-home .hero-float {
@@ -1322,6 +1380,20 @@ h3 {
     padding-bottom: 100px;
   }
 
+  .page-home .hero-cluster {
+    width: 188px;
+    top: 18px;
+    padding: 12px 11px;
+  }
+
+  .page-home .hero-cluster__title {
+    font-size: 0.76rem;
+  }
+
+  .page-home .hero-cluster__list {
+    font-size: 0.78rem;
+  }
+
   .page-home .hero--playful .hero__actions--rail {
     width: calc(100% - 44px);
   }
@@ -1380,6 +1452,17 @@ h3 {
     min-height: 292px;
     border-radius: 26px;
     padding: 12px 12px 92px;
+  }
+
+  .page-home .hero-cluster {
+    position: static;
+    width: 100%;
+    transform: none;
+    margin-bottom: 10px;
+  }
+
+  .page-home .hero-cluster--right {
+    margin-bottom: 14px;
   }
 
   .page-home .hero-doodle__word {
