@@ -15,6 +15,42 @@
   });
 })();
 
+// Hero headline typing animation
+(function () {
+  var textEl = document.getElementById('hero-title-text');
+  var caret = document.querySelector('.hero-caret');
+  var actions = document.querySelector('.hero__actions');
+  var countdown = document.querySelector('.hero__countdown');
+  var heroTitle = document.querySelector('.hero-title');
+  if (!textEl || !heroTitle) return;
+
+  var fullText = 'The #1 High School Research Experience.';
+  var idx = 0;
+  var speed = 40; // ms per char
+
+  function type() {
+    if (idx <= fullText.length) {
+      textEl.textContent = fullText.slice(0, idx);
+      idx++;
+      setTimeout(type, speed + Math.random() * 40);
+    } else {
+      // finished typing: show buttons and countdown
+      heroTitle.classList.add('is-visible');
+      if (actions) actions.classList.add('is-visible');
+      if (countdown) countdown.classList.add('is-visible');
+      if (caret) caret.style.display = 'none';
+    }
+  }
+
+  // small delay so other assets can load
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      heroTitle.classList.add('is-visible');
+      type();
+    }, 300);
+  });
+})();
+
 // FAQ accordion
 (function () {
   var items = document.querySelectorAll(".faq-item");
