@@ -76,8 +76,8 @@
   const presetA = { speed:1.45, scale:0.68, seed:437.0, turbAmp:0.9, turbFreq:0.46, octaves:7, bands:2.0, contrast:1.2, dither:0.05 };
   const presetB = { speed:0.81, scale:0.64, seed:40.0, turbAmp:0.34, turbFreq:0.71, octaves:7, bands:2.0, contrast:1.2, dither:0.05 };
   // sheen defaults
-  presetA.sheenIntensity = 0.95; presetA.sheenPower = 20; presetA.sheenColor = [0.02,0.03,0.06];
-  presetB.sheenIntensity = 0.5; presetB.sheenPower = 16; presetB.sheenColor = [0.02,0.03,0.06];
+  presetA.sheenIntensity = 1.2; presetA.sheenPower = 26; presetA.sheenColor = [0.03,0.045,0.09];
+  presetB.sheenIntensity = 0.6; presetB.sheenPower = 18; presetB.sheenColor = [0.02,0.03,0.06];
 
   // --- Uniform state (editable) ---
   const state = Object.assign({}, presetA);
@@ -305,23 +305,31 @@
   gl.uniform3f(uniforms.u_stop1, stop1[0], stop1[1], stop1[2]);
   gl.uniform3f(uniforms.u_stop2, stop2[0], stop2[1], stop2[2]);
 
-  // --- create blue-noise texture (runtime-generated tile) ---
-  function makeBlueNoiseTile(size){
+  // --- generate a higher-quality blue-noise-like tile (poisson-ish dots + blur) ---
+  function generateBlueNoiseTile(size){
     const c = document.createElement('canvas'); c.width = c.height = size;
     const ctx = c.getContext('2d');
-    const img = ctx.createImageData(size, size);
-    for(let i=0;i<size*size;i++){
-      // start with random grayscale; we'll blur slightly to reduce harshness
-      const v = Math.floor(Math.random()*256);
-      img.data[i*4+0] = v; img.data[i*4+1] = v; img.data[i*4+2] = v; img.data[i*4+3] = 255;
+    ctx.fillStyle = 'black'; ctx.fillRect(0,0,size,size);
+    // Poisson-disk style placement (simple rejection sampling)
+    const points = [];
+    const minDist = Math.max(2, Math.floor(size/16));
+    const tries = 4000;
+    for(let i=0;i<tries;i++){
+      const x = Math.floor(Math.random()*size), y = Math.floor(Math.random()*size);
+      let ok = true;
+      for(let p of points){ const dx = p.x-x, dy = p.y-y; if(dx*dx+dy*dy < minDist*minDist){ ok=false; break; } }
+      if(ok) points.push({x,y});
+      if(points.length > size*0.7) break;
     }
-    ctx.putImageData(img, 0, 0);
-    // small blur pass to soften; use canvas filter if available
-    try { ctx.filter = 'blur(0.6px)'; ctx.drawImage(c, 0, 0); ctx.filter = 'none'; } catch(e){}
+    // draw small white dots
+    ctx.fillStyle = 'white';
+    for(let p of points){ ctx.fillRect(p.x, p.y, 2, 2); }
+    // gentle blur to create a blue-noise-like spectral shape
+    try{ ctx.filter = 'blur(0.7px)'; ctx.drawImage(c,0,0); ctx.filter = 'none'; } catch(e){}
     return c;
   }
 
-  const noiseTile = makeBlueNoiseTile(128);
+  const noiseTile = generateBlueNoiseTile(128);
   const noiseTex = gl.createTexture(); gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, noiseTex);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, noiseTile);
@@ -333,6 +341,13 @@
   gl.uniform1i(uniforms.u_blueNoise, 0);
   // default tile scale (how many tiles across the screen)
   gl.uniform1f(uniforms.u_noiseScale, 64.0);
+
+  // add download button behavior (allow saving the generated blue-noise PNG)
+  const downloadBtn = document.createElement('button'); downloadBtn.textContent = 'Download blue-noise';
+  downloadBtn.style.marginTop = '8px'; downloadBtn.onclick = ()=>{
+    const url = noiseTile.toDataURL('image/png'); const a = document.createElement('a'); a.href = url; a.download = 'blue-noise-128.png'; a.click();
+  };
+  document.getElementById('ui').appendChild(downloadBtn);
 
   // --- prepare FBOs for optional separable blur ---
   function createFBO(w,h){
