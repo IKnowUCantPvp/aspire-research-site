@@ -369,6 +369,39 @@ h3 {
 }
 .hero__stars { color: var(--gold-solid); letter-spacing: 2px; }
 
+/* ===================== Animated hero background ===================== */
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* subtle moving gradient overlay */
+  background: linear-gradient(120deg, rgba(245,214,132,0.06), rgba(255,255,255,0.02) 30%, rgba(10,10,10,0) 60%);
+  background-size: 200% 200%;
+  transform: translateZ(0);
+  animation: heroGradient 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  mix-blend-mode: overlay;
+  opacity: 0.9;
+}
+
+.hero > .hero__inner { position: relative; z-index: 1; }
+
+@keyframes heroGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero::before { animation: none; }
+}
+
 /* ===================== Trust / logo bar ===================== */
 .trust-bar { padding: 48px 0; }
 .trust-bar__label {
