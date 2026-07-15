@@ -9,6 +9,20 @@ layout: base.njk
     <div class="hero-bg__layer" style="--i:2"></div>
     <div class="hero-bg__layer" style="--i:3"></div>
   </div>
+  <!-- Inline SVG filters for animated velvet effect -->
+  <svg aria-hidden="true" width="0" height="0" style="position: absolute;">
+    <filter id="velvetTurbulence1">
+      <feTurbulence id="turb1" baseFrequency="0.007" numOctaves="3" seed="2" stitchTiles="stitch" />
+      <feColorMatrix type="saturate" values="0.2" />
+      <feDisplacementMap in="SourceGraphic" scale="30" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    <filter id="velvetTurbulence2">
+      <feTurbulence id="turb2" baseFrequency="0.02" numOctaves="2" seed="6" stitchTiles="stitch" />
+      <feDisplacementMap in="SourceGraphic" scale="12" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
+
+  <div class="hero-velvet" aria-hidden="true"></div>
   <div class="hero__inner">
     <p class="hero__eyebrow">The Aspire Fellowship</p>
     <h1 class="hero-title"><span id="hero-title-text" aria-live="polite"></span><span class="hero-caret" aria-hidden="true">|</span></h1>

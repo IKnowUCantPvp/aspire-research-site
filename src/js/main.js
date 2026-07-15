@@ -15,6 +15,24 @@
   });
 })();
 
+// Animate SVG turbulence to create moving velvet folds
+(function () {
+  var t1 = document.getElementById('turb1');
+  var t2 = document.getElementById('turb2');
+  if (!t1 || !t2) return;
+  var start = performance.now();
+  function animate(now) {
+    var t = (now - start) / 1000;
+    // oscillate baseFrequency subtly
+    var bf1 = 0.006 + Math.sin(t * 0.6) * 0.002 + (Math.sin(t * 0.13) * 0.0008);
+    var bf2 = 0.018 + Math.cos(t * 0.45) * 0.006 + (Math.cos(t * 0.09) * 0.001);
+    t1.setAttribute('baseFrequency', bf1.toFixed(5));
+    t2.setAttribute('baseFrequency', bf2.toFixed(5));
+    requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
+})();
+
 // Hero headline typing animation
 (function () {
   var textEl = document.getElementById('hero-title-text');

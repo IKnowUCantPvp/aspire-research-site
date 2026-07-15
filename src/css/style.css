@@ -525,6 +525,26 @@ h3 {
   transform-origin: 50% 50%;
   will-change: transform, opacity;
 }
+
+/* Velvet procedural layer that uses SVG filters for displacement */
+.hero-velvet {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg,#041226 0%, #061a30 40%, #071a2a 70%);
+  mix-blend-mode: normal;
+  opacity: 1;
+  filter: url(#velvetTurbulence1);
+  will-change: filter, transform;
+}
+.hero-velvet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(60% 20% at 30% 10%, rgba(255,255,255,0.02), transparent 20%), linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.12));
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
 .hero-bg__layer[style*='--i:1'] {
   animation: heroMoveA 18s cubic-bezier(.2,.8,.2,.9) infinite;
   opacity: 0.5;
