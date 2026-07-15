@@ -543,6 +543,26 @@ h3 {
   filter: blur(20px);
 }
 
+/* record preview button */
+#record-preview-btn {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 9999;
+  padding: 10px 14px;
+  background: linear-gradient(180deg,#ffd98c,#f5d684);
+  color: #0b0b0b;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+  border: 0;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+@media (max-width: 720px) {
+  #record-preview-btn { right: 12px; bottom: 12px; padding: 8px 10px; }
+}
+
 @keyframes heroMoveA {
   0% { transform: translate3d(-6%, -2%, 0) scale(1.02) rotate(-1deg); }
   25% { transform: translate3d(6%, -4%, 0) scale(1.03) rotate(1deg); }
