@@ -1,21 +1,32 @@
-// Mobile nav toggle
+// Scroll progress pill: floats just below the header, fills as the visitor scrolls
 (function () {
-  var toggle = document.querySelector(".nav-toggle");
-  var list = document.querySelector(".primary-nav__list");
-  if (!toggle || !list) return;
-  toggle.addEventListener("click", function () {
-    var isOpen = list.classList.toggle("is-open");
-    toggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
-  });
-  list.querySelectorAll("a").forEach(function (link) {
-    link.addEventListener("click", function () {
-      list.classList.remove("is-open");
-      toggle.setAttribute("aria-expanded", "false");
-    });
-  });
+  var pill = document.querySelector(".scroll-progress");
+  var bar = document.querySelector(".scroll-progress__bar");
+  var header = document.querySelector(".site-header");
+  if (!pill || !bar) return;
+
+  function positionPill() {
+    // Dock it just below the header's bottom edge so it sits on the page's
+    // white background (with its own gold stroke) rather than overlapping
+    // the header chrome.
+    var headerH = header ? header.offsetHeight : 0;
+    pill.style.top = headerH + 14 + "px";
+  }
+
+  function updateProgress() {
+    var doc = document.documentElement;
+    var scrollable = doc.scrollHeight - doc.clientHeight;
+    var pct = scrollable > 0 ? (window.scrollY / scrollable) * 100 : 0;
+    bar.style.width = pct + "%";
+  }
+
+  positionPill();
+  updateProgress();
+  window.addEventListener("scroll", updateProgress, { passive: true });
+  window.addEventListener("resize", positionPill);
 })();
 
-// WebGL/GLSL velvet prototype (high-fidelity)
+// WebGL velvet prototype (subtle animated hero sheen)
 (function () {
   var canvas = document.getElementById('velvet-canvas');
   if (!canvas) return;
@@ -35,19 +46,16 @@
     }
   }
 
-  // vertex shader
   var vs = '\n' +
     'attribute vec2 a_pos;\n' +
     'varying vec2 v_uv;\n' +
     'void main(){ v_uv = a_pos * 0.5 + 0.5; gl_Position = vec4(a_pos, 0.0, 1.0);}\n';
 
-  // fragment shader: fbm-based flowing velvet
   var fs = '\n' +
     'precision highp float;\n' +
     'varying vec2 v_uv;\n' +
     'uniform float u_time;\n' +
     'uniform vec2 u_res;\n' +
-    '/* Classic 2D noise from iq */\n' +
     'vec3 permute(vec3 x){ return mod(((x*34.0)+1.0)*x, 289.0); }\n' +
     'float snoise(vec2 v){\n' +
     '  const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.5773502691896268, 0.024390243902439025);\n' +
@@ -75,11 +83,9 @@
     '  float n = fbm(uv * 1.6 - vec2(t*0.6, t*0.4));\n' +
     '  float n2 = fbm(uv * 3.0 + vec2(t*0.8, -t*0.5));\n' +
     '  float v = mix(n, n2, 0.45);\n' +
-    '  vec3 base = vec3(0.03,0.09,0.17) * 1.0;\n' +
-    '  vec3 highlight = vec3(0.08,0.16,0.28) * (0.6 + v*0.6);\n' +
+    '  vec3 base = vec3(0.04,0.1,0.19);\n' +
+    '  vec3 highlight = vec3(0.09,0.19,0.32) * (0.6 + v*0.6);\n' +
     '  vec3 col = mix(base, highlight, smoothstep(-0.3,0.6,v));\n' +
-    '  float streak = smoothstep(0.45,0.7, fbm(uv*6.0 + vec2(t*1.2)) );\n' +
-    '  col += vec3(0.08,0.12,0.18) * streak * 0.6;\n' +
     '  gl_FragColor = vec4(col, 1.0);\n' +
     '}\n';
 
@@ -138,59 +144,15 @@
   var start = performance.now();
   function animate(now) {
     var t = (now - start) / 1000;
-    // oscillate baseFrequency subtly
     var bf1 = 0.006 + Math.sin(t * 0.6) * 0.002 + (Math.sin(t * 0.13) * 0.0008);
     var bf2 = 0.018 + Math.cos(t * 0.45) * 0.006 + (Math.cos(t * 0.09) * 0.001);
     t1.setAttribute('baseFrequency', bf1.toFixed(5));
     t2.setAttribute('baseFrequency', bf2.toFixed(5));
-    // animate displacement scales for more visible folds
     if (d1) d1.setAttribute('scale', (28 + Math.sin(t * 0.8) * 8 + Math.sin(t * 0.15) * 3).toFixed(1));
     if (d2) d2.setAttribute('scale', (10 + Math.cos(t * 0.6) * 6 + Math.cos(t * 0.11) * 2).toFixed(1));
     requestAnimationFrame(animate);
   }
   requestAnimationFrame(animate);
-})();
-
-// Hero headline typing animation
-(function () {
-  var textEl = document.getElementById('hero-title-text');
-  var caret = document.querySelector('.hero-caret');
-  var actions = document.querySelector('.hero__actions');
-  var countdown = document.querySelector('.hero__countdown');
-  var heroTitle = document.querySelector('.hero-title');
-  if (!textEl || !heroTitle) return;
-
-  var fullText = 'The #1 High School Research Experience.';
-  var idx = 0;
-  var defaultSpeed = 40; // ms per char
-  // allow configuring typing speed via data attribute on hero-title
-  var speed = defaultSpeed;
-  try {
-    var speedAttr = heroTitle && heroTitle.getAttribute('data-type-speed');
-    if (speedAttr) speed = parseInt(speedAttr, 10) || defaultSpeed;
-  } catch (e) {}
-
-  function type() {
-    if (idx <= fullText.length) {
-      textEl.textContent = fullText.slice(0, idx);
-      idx++;
-      setTimeout(type, speed + Math.random() * 40);
-    } else {
-      // finished typing: show buttons and countdown
-      heroTitle.classList.add('is-visible');
-      if (actions) actions.classList.add('is-visible');
-      if (countdown) countdown.classList.add('is-visible');
-      if (caret) caret.style.display = 'none';
-    }
-  }
-
-  // small delay so other assets can load
-  window.addEventListener('load', function () {
-    setTimeout(function () {
-      heroTitle.classList.add('is-visible');
-      type();
-    }, 300);
-  });
 })();
 
 // Hero parallax layers (mouse/touch)
@@ -200,24 +162,22 @@
   if (!hero || !layers || layers.length === 0) return;
 
   var supportsPointer = window.PointerEvent !== undefined;
-  var cx = hero.clientWidth / 2;
-  var cy = hero.clientHeight / 2;
-  var pos = { x: cx, y: cy };
+  var pos = { x: 0, y: 0 };
   var raf = null;
 
   function onMove(clientX, clientY) {
     var rect = hero.getBoundingClientRect();
     var x = (clientX - rect.left) / rect.width;
     var y = (clientY - rect.top) / rect.height;
-    pos.x = (x - 0.5) * 2; // -1..1
+    pos.x = (x - 0.5) * 2;
     pos.y = (y - 0.5) * 2;
     if (!raf) raf = requestAnimationFrame(update);
   }
 
   function update() {
     layers.forEach(function (layer, i) {
-      var depth = (i + 1) / layers.length; // 0..1
-      var tx = pos.x * 10 * depth; // px
+      var depth = (i + 1) / layers.length;
+      var tx = pos.x * 10 * depth;
       var ty = pos.y * 8 * depth;
       var rot = pos.x * (2 * depth);
       layer.style.transform = 'translate3d(' + tx + 'px,' + ty + 'px,0) rotate(' + rot + 'deg) scale(' + (1 + depth * 0.015) + ')';
@@ -239,46 +199,6 @@
   }
 })();
 
-// Simple in-browser preview recorder (uses getDisplayMedia to capture tab/window)
-(function () {
-  // only show on localhost or when ?preview is present
-  var enabled = location.hostname === 'localhost' || /[?&]preview(=|&|$)/.test(location.search) || /[?&]record(=|&|$)/.test(location.search);
-  if (!enabled) return;
-  var btn = document.createElement('button');
-  btn.id = 'record-preview-btn';
-  btn.type = 'button';
-  btn.textContent = 'Record preview';
-  btn.title = 'Record a short WebM preview of the page (you will be asked to share your screen/tab)';
-  document.body.appendChild(btn);
-
-  function downloadBlob(blob, name) {
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 60000);
-  }
-
-  btn.addEventListener('click', function () {
-    var duration = 4500; // ms
-    navigator.mediaDevices.getDisplayMedia({ video: true, audio: false }).then(function (stream) {
-      var recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
-      var chunks = [];
-      recorder.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
-      recorder.onstop = function () {
-        var blob = new Blob(chunks, { type: 'video/webm' });
-        downloadBlob(blob, 'preview.webm');
-        // stop tracks
-        stream.getTracks().forEach(function (t) { t.stop(); });
-      };
-      recorder.start();
-      setTimeout(function () { recorder.stop(); }, duration);
-    }).catch(function (err) { console.warn('Preview recording canceled', err); });
-  });
-})();
-
 // FAQ accordion
 (function () {
   var items = document.querySelectorAll(".faq-item");
@@ -293,19 +213,152 @@
   });
 })();
 
-// Solution tabs
+// Scroll-reveal: fade + slide up as sections/cards enter the viewport
 (function () {
-  var nav = document.querySelector(".solution-tabs__nav");
-  if (!nav) return;
-  var buttons = nav.querySelectorAll(".solution-tabs__btn");
-  var panels = document.querySelectorAll(".solution-tabs__panel");
-  buttons.forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      var target = btn.getAttribute("data-tab");
-      buttons.forEach(function (b) { b.classList.toggle("is-active", b === btn); });
-      panels.forEach(function (p) {
-        p.classList.toggle("is-active", p.getAttribute("data-tab-panel") === target);
+  var targets = document.querySelectorAll(
+    ".section-head, .card, .benefit-card, .testimonial-card, .tier-card, .perk-card, " +
+    ".step-card, .carousel__card, .pricing-hero-card, .mission-intro, .stat-line, .block, .timeline-block"
+  );
+  if (!targets.length) return;
+
+  if (!("IntersectionObserver" in window)) {
+    targets.forEach(function (t) { t.classList.add("reveal", "is-visible"); });
+    return;
+  }
+
+  targets.forEach(function (el) { el.classList.add("reveal"); });
+
+  // stagger siblings sharing a parent (e.g. cards in a grid)
+  var seen = new Map();
+  targets.forEach(function (el) {
+    var parent = el.parentElement;
+    var i = seen.get(parent) || 0;
+    el.style.setProperty("--reveal-i", Math.min(i, 6));
+    seen.set(parent, i + 1);
+  });
+
+  var observer = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
       });
+    },
+    { threshold: 0.12, rootMargin: "0px 0px -8% 0px" }
+  );
+
+  targets.forEach(function (el) { observer.observe(el); });
+})();
+
+// Stats bar count-up: numbers animate from 0 to their value once scrolled into view
+(function () {
+  var nums = document.querySelectorAll(".stats-bar__num");
+  if (!nums.length) return;
+
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function animate(el) {
+    var raw = el.textContent.trim();
+    var match = raw.match(/^([^\d]*)([\d,]+)(.*)$/);
+    if (!match) return;
+    var prefix = match[1];
+    var digits = match[2];
+    var suffix = match[3];
+    var target = parseInt(digits.replace(/,/g, ""), 10);
+    if (reduceMotion || !target) return;
+
+    var duration = 1400;
+    var start = null;
+
+    function frame(now) {
+      if (start === null) start = now;
+      var progress = Math.min((now - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3);
+      var current = Math.round(target * eased);
+      el.textContent = prefix + current.toLocaleString("en-US") + suffix;
+      if (progress < 1) {
+        requestAnimationFrame(frame);
+      } else {
+        el.textContent = prefix + digits + suffix;
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  if (!("IntersectionObserver" in window)) {
+    return;
+  }
+
+  var observer = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          animate(entry.target);
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.4 }
+  );
+
+  nums.forEach(function (el) { observer.observe(el); });
+})();
+
+// Sticky bottom CTA bar: appears once the hero has scrolled past, hides near the footer
+(function () {
+  var bar = document.querySelector(".sticky-cta");
+  var hero = document.querySelector(".hero");
+  if (!bar) return;
+
+  var footer = document.querySelector(".site-footer");
+  var showAfter = hero ? hero.offsetHeight * 0.7 : 400;
+
+  function update() {
+    var scrollY = window.scrollY || window.pageYOffset;
+    var nearFooter = false;
+    if (footer) {
+      var footerTop = footer.getBoundingClientRect().top;
+      nearFooter = footerTop < window.innerHeight * 0.6;
+    }
+    bar.classList.toggle("is-visible", scrollY > showAfter && !nearFooter);
+  }
+
+  update();
+  window.addEventListener("scroll", update, { passive: true });
+  window.addEventListener("resize", update);
+})();
+
+// Horizontal card carousels with prev/next arrow controls
+(function () {
+  document.querySelectorAll("[data-carousel]").forEach(function (root) {
+    var track = root.querySelector(".carousel__track");
+    var prev = root.querySelector('[data-carousel-prev]');
+    var next = root.querySelector('[data-carousel-next]');
+    if (!track || !prev || !next) return;
+
+    function cardWidth() {
+      var card = track.querySelector(".carousel__card");
+      if (!card) return track.clientWidth;
+      var style = getComputedStyle(card);
+      return card.offsetWidth + parseFloat(style.marginRight || 0) + 20;
+    }
+
+    function updateArrows() {
+      var max = track.scrollWidth - track.clientWidth - 4;
+      prev.disabled = track.scrollLeft <= 4;
+      next.disabled = track.scrollLeft >= max;
+    }
+
+    prev.addEventListener("click", function () {
+      track.scrollBy({ left: -cardWidth(), behavior: "smooth" });
     });
+    next.addEventListener("click", function () {
+      track.scrollBy({ left: cardWidth(), behavior: "smooth" });
+    });
+    track.addEventListener("scroll", updateArrows, { passive: true });
+    window.addEventListener("resize", updateArrows);
+    updateArrows();
   });
 })();

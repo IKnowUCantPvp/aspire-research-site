@@ -29,6 +29,7 @@ bodyClass: page-home
   <canvas id="velvet-canvas" aria-hidden="true"></canvas>
 
   <div class="hero__inner">
+    <p class="hero__brand-name">Aspire Research</p>
     <p class="hero__eyebrow">The Aspire Fellowship</p>
     <h1 class="hero-title hero-title--playful">
       <span class="hero-title__line">
@@ -47,56 +48,51 @@ bodyClass: page-home
     <p class="hero__sub hero__sub--playful">Learn directly from elite mentors, design real experiments, and present standout science fair-ready research.</p>
 
     <div class="hero-showcase" aria-label="Science research graphic">
-      <div class="hero-showcase__bar" aria-hidden="true">
-        <span class="hero-showcase__bar-main"></span>
-        <span class="hero-showcase__bar-accent"></span>
-      </div>
-
       <div class="hero-showcase__graphic" aria-hidden="true">
         <aside class="hero-cluster hero-cluster--left">
-          <p class="hero-cluster__title">Research Process</p>
+          <p class="hero-cluster__title">The Fellowship</p>
           <ul class="hero-cluster__list">
             <li>
               <span class="hero-cluster__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><path d="M7 3h8l4 4v14H7z"></path><path d="M15 3v5h4"></path><path d="M9 13h8M9 17h6"></path></svg>
+                <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
               </span>
-              Research papers
+              1:1 PhD mentor match
             </li>
             <li>
               <span class="hero-cluster__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><path d="M4 19h16"></path><path d="M7 19V9"></path><path d="M12 19V6"></path><path d="M17 19v-8"></path></svg>
+                <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><rect x="4" y="4" width="16" height="4" rx="1"/><rect x="4" y="10" width="16" height="4" rx="1"/><rect x="4" y="16" width="16" height="4" rx="1"/></svg>
               </span>
-              Data charts
+              12-week program
             </li>
             <li>
               <span class="hero-cluster__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><path d="M6 4h12v16H6z"></path><path d="M9 8h6M9 12h6M9 16h4"></path></svg>
+                <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9"/></svg>
               </span>
-              Literature review
+              No lab access required
             </li>
           </ul>
         </aside>
 
         <aside class="hero-cluster hero-cluster--right">
-          <p class="hero-cluster__title">Program Toolkit</p>
+          <p class="hero-cluster__title">What's Included</p>
           <ul class="hero-cluster__list">
             <li>
               <span class="hero-cluster__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><path d="M6 19h8"></path><path d="M9 19v-4"></path><path d="M9 15l4-4"></path><path d="M13 11l3 3"></path><path d="M12 6h5v2h-5z"></path></svg>
+                <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><path d="M14 3v5a1 1 0 0 0 1 1h5"/><path d="M6 3h8l6 6v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M9 13h6M9 17h6"/></svg>
               </span>
-              Microscope practice
+              ISEF &amp; publication support
             </li>
             <li>
               <span class="hero-cluster__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><rect x="4" y="4" width="16" height="14" rx="2"></rect><path d="M8 9h8M8 13h5"></path><path d="M7 21h10"></path></svg>
+                <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
               </span>
-              Science fair board
+              Flexible payment plans
             </li>
             <li>
               <span class="hero-cluster__icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" class="hero-cluster__icon-svg"><path d="M5 6h14v9H9l-4 3z"></path><path d="M9 10h6"></path></svg>
               </span>
-              Mentor feedback
+              Ongoing mentor access
             </li>
           </ul>
         </aside>
@@ -150,7 +146,7 @@ bodyClass: page-home
 
       <div class="hero__actions hero__actions--rail">
         <a href="/access-application/" class="btn btn--gold">Apply Now</a>
-        <a href="/mission/" class="btn btn--outline">Learn More</a>
+        <a href="/mission/" class="btn btn--outline">Learn More About Aspire</a>
       </div>
     </div>
 
@@ -170,6 +166,13 @@ bodyClass: page-home
     </div>
   </div>
 </section>
+
+<div class="sticky-cta" aria-hidden="false">
+  <img src="/assets/images/mentors/mentor-03.jpg" alt="" class="sticky-cta__avatar">
+  <span class="sticky-cta__text">Ready to start your research?</span>
+  <a href="/pricing/" class="btn btn--outline btn--sm">View Pricing</a>
+  <a href="/access-application/" class="btn btn--dark btn--sm">Apply Now</a>
+</div>
 
 <section class="trust-bar section">
   <div class="container">
@@ -211,10 +214,114 @@ bodyClass: page-home
   </div>
 </section>
 
-<section class="section">
+<section class="section" style="position:relative; overflow:hidden;">
+  <span class="squiggle squiggle--drift" aria-hidden="true" style="width:120px; height:120px; left:2%; top:8px;">
+    <svg viewBox="0 0 80 80"><path d="M40 70c-16 0-28-12-28-26 0-11 9-20 20-20 9 0 16 7 16 16 0 7-6 13-13 13-6 0-10-4-10-10 0-5 4-8 8-8"/></svg>
+  </span>
+  <span class="squiggle squiggle--drift" aria-hidden="true" style="width:150px; height:40px; right:3%; bottom:12px; animation-delay:-3s;">
+    <svg viewBox="0 0 200 40"><path d="M4 24c20-18 40-18 60 0s40 18 60 0 40-18 60 0"/></svg>
+  </span>
+
   <div class="container">
     <p class="mission-intro">
       Founded by <strong>ISEF champions</strong> and <strong>PhDs</strong>, The Aspire Fellowship helps ambitious <strong>high school</strong> students conduct graduate-level research through expert <strong>mentorship</strong>.
     </p>
+
+    <p class="stat-line" style="margin-top:40px;">
+      Mentored by
+      <img src="/assets/images/mentors/mentor-01.jpg" alt="">
+      <img src="/assets/images/mentors/mentor-05.jpg" alt="">
+      real ISEF champions &amp; PhDs &mdash; trusted by <span class="accent">20,000+</span> students worldwide.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="block block--dark">
+      <div class="stats-bar">
+        <div class="stats-bar__item">
+          <p class="stats-bar__num">20,000+</p>
+          <p class="stats-bar__label">Students mentored worldwide</p>
+        </div>
+        <div class="stats-bar__item">
+          <p class="stats-bar__num">300+</p>
+          <p class="stats-bar__label">Papers &amp; abstracts submitted</p>
+        </div>
+        <div class="stats-bar__item">
+          <p class="stats-bar__num">150+</p>
+          <p class="stats-bar__label">ISEF &amp; science fair awards</p>
+        </div>
+        <div class="stats-bar__item">
+          <p class="stats-bar__num">$250K+</p>
+          <p class="stats-bar__label">In scholarships awarded</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="block block--tint">
+      <div class="spotlight spotlight--light">
+        <div class="spotlight__media">
+          <div class="spotlight__monogram" aria-hidden="true">NC</div>
+        </div>
+        <div>
+          <span class="spotlight__tag">Student Spotlight</span>
+          <p class="spotlight__quote">&ldquo;With the fellowship, I have been able to submit three abstracts from my previous and current research work &mdash; and my dream of having my work published online has been fulfilled.&rdquo;</p>
+          <p class="spotlight__name">Noelani Castellon</p>
+          <p class="spotlight__role">Grade 12 &middot; Spring Cohort</p>
+          <div class="spotlight__stats">
+            <div>
+              <p class="spotlight__stat-num">3</p>
+              <p class="spotlight__stat-label">Abstracts submitted</p>
+            </div>
+            <div>
+              <p class="spotlight__stat-num">12</p>
+              <p class="spotlight__stat-label">Weeks in the program</p>
+            </div>
+            <div>
+              <p class="spotlight__stat-num">1:1</p>
+              <p class="spotlight__stat-label">PhD mentor match</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="block block--vivid">
+      <div class="spotlight spotlight--reverse">
+        <div>
+          <span class="spotlight__tag">Mentor Spotlight</span>
+          <p class="spotlight__quote">&ldquo;My job isn't to do the research for my students &mdash; it's to ask the right questions so they find the answer themselves. That's what makes it stick.&rdquo;</p>
+          <p class="spotlight__name">PhD Mentor &middot; Cognitive Science</p>
+          <p class="spotlight__role">Aspire mentor network</p>
+        </div>
+        <div class="spotlight__media">
+          <img src="/assets/images/mentors/mentor-02.jpg" alt="" class="spotlight__photo">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="cta-banner" style="background:var(--bg-card);">
+      <div class="cta-banner__content">
+        <h2>Ready to start your research?</h2>
+        <p>Applications take a few minutes. Our team will help you find the right mentor and path.</p>
+        <div class="cta-banner__actions">
+          <a href="/access-application/" class="btn btn--gold">Apply Now</a>
+          <a href="/mission/" class="btn btn--outline">Learn How It Works</a>
+        </div>
+      </div>
+    </div>
   </div>
 </section>

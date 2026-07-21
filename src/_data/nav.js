@@ -19,8 +19,8 @@ module.exports = {
   social: [
     { label: "Instagram", url: "https://www.instagram.com/aspire_research/" },
     { label: "LinkedIn", url: "https://www.linkedin.com/company/aspire-education-1/" },
-    { label: "Discord", url: "https://discord.gg/7u3w5JUzdM" },
+    { label: "Discord", url: "https://discord.gg/ftytyj2Pk" },
   ],
   applyUrl: "/access-application/",
-  discordUrl: "https://discord.gg/XyFVN7dgnX",
+  discordUrl: "https://discord.gg/ftytyj2Pk",
 };

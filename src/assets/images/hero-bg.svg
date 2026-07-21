@@ -2,30 +2,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 800" preserveAspectRatio="xMidYMid slice">
   <defs>
     <linearGradient id="g1" x1="0%" x2="100%" y1="0%" y2="100%">
-      <stop offset="0%" stop-color="#0b2545" stop-opacity="0.95"/>
-      <stop offset="100%" stop-color="#001018" stop-opacity="0.95"/>
+      <stop offset="0%" stop-color="#12315a" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#050f1e" stop-opacity="0.3"/>
     </linearGradient>
     <linearGradient id="g2" x1="0%" x2="100%">
-      <stop offset="0%" stop-color="#0f3a6b" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#055" stop-opacity="0.7"/>
+      <stop offset="0%" stop-color="#1b4a82" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#0a2444" stop-opacity="0.35"/>
     </linearGradient>
     <filter id="blurSmall"><feGaussianBlur stdDeviation="18"/></filter>
     <filter id="blurLarge"><feGaussianBlur stdDeviation="36"/></filter>
   </defs>
 
-  <!-- base dark tone -->
+  <!-- base navy tone -->
   <rect width="100%" height="100%" fill="url(#g1)" />
 
   <!-- subtle moving ribbon 1 -->
-  <path id="r1" d="M0,300 C300,200 500,400 800,300 C1100,200 1300,360 1600,300 L1600,800 L0,800 Z" fill="url(#g2)" opacity="0.22" filter="url(#blurSmall)"/>
+  <path id="r1" d="M0,300 C300,200 500,400 800,300 C1100,200 1300,360 1600,300 L1600,800 L0,800 Z" fill="url(#g2)" opacity="0.4" filter="url(#blurSmall)"/>
 
   <!-- ribbon 2 -->
-  <path id="r2" d="M0,420 C250,520 450,320 800,420 C1150,520 1350,360 1600,420 L1600,800 L0,800 Z" fill="#08293f" opacity="0.16" filter="url(#blurLarge)"/>
+  <path id="r2" d="M0,420 C250,520 450,320 800,420 C1150,520 1350,360 1600,420 L1600,800 L0,800 Z" fill="#0d2a4e" opacity="0.35" filter="url(#blurLarge)"/>
 
   <!-- highlight strokes -->
-  <g opacity="0.18">
-    <path d="M-200,200 C200,100 600,300 1000,200 C1400,100 1800,260 2200,200" stroke="#2fa4ff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
-    <path d="M-100,480 C300,380 700,580 1200,480 C1500,420 1900,540 2300,480" stroke="#0ea5ff" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <g opacity="0.3">
+    <path d="M-200,200 C200,100 600,300 1000,200 C1400,100 1800,260 2200,200" stroke="#d4af37" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path d="M-100,480 C300,380 700,580 1200,480 C1500,420 1900,540 2300,480" stroke="#3f7fd6" stroke-width="1.6" fill="none" stroke-linecap="round"/>
   </g>
 
 </svg>
